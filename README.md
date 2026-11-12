@@ -4,6 +4,21 @@ Uno schermino da telefono per seguire una **Creality Ender-3 V3 KE** (firmware o
 
 *A tiny phone-friendly status page for the Creality Ender-3 V3 KE (stock firmware). It reads the printer's websocket on port 9999 and shows progress, temperatures and ETA. Italian UI.*
 
+## Temi
+
+Le cifre sono display a 7 segmenti, come i vecchi contatori. Il pulsante 🎨 in alto cambia sfondo, e la pagina ricorda l'ultimo scelto:
+
+| Tema | Stile |
+|---|---|
+| `pompa` | Pompa di benzina anni '80: insegna rossa a strisce, piastre d'acciaio, cifre arancioni |
+| `arcade` | Sala giochi 1986: griglia al neon fucsia, cifre azzurre |
+| `terminale` | Terminale 1982: fosfori verdi e righe del monitor |
+| `radio` | Radio della nonna: legno, ottone, display verde acqua |
+| `jukebox` | Juke-box anni '50: pavimento a scacchi, rosa e menta, cifre rosse |
+| `luna` | Missione Luna 1969: pannelli grigi tra le stelle, cifre verdi |
+
+Si può anche aprire direttamente un tema: `http://IP-DEL-PC/?tema=arcade`.
+
 ## Come funziona
 
 ```
