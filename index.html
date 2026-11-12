@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111418">
+<title>Ender KE</title>
+<style>
+  :root{--bg:#f4f5f7;--card:#fff;--fg:#15181d;--mut:#6b7280;--bar:#e5e7eb;--acc:#16a34a;--hot:#ea580c;--bed:#2563eb;--err:#dc2626}
+  @media (prefers-color-scheme:dark){:root{--bg:#111418;--card:#1b1f25;--fg:#eef0f3;--mut:#9aa1ab;--bar:#2b3038;--acc:#22c55e;--hot:#fb923c;--bed:#60a5fa;--err:#f87171}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.35 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:16px;padding-top:max(16px,env(safe-area-inset-top))}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  h1{font-size:18px;margin:0}
+  .pill{font-size:13px;padding:4px 10px;border-radius:99px;background:var(--bar);color:var(--mut)}
+  .pill.on{background:var(--acc);color:#fff}
+  .pill.bad{background:var(--err);color:#fff}
+  .card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 2px #0001}
+  .file{font-size:14px;color:var(--mut);word-break:break-all;margin-bottom:8px}
+  .big{font-size:44px;font-weight:700;font-variant-numeric:tabular-nums}
+  .bar{height:12px;background:var(--bar);border-radius:6px;overflow:hidden;margin:8px 0 12px}
+  .bar>i{display:block;height:100%;width:0;background:var(--acc);transition:width .6s}
+  .row{display:flex;justify-content:space-between;color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums}
+  .row b{color:var(--fg);font-weight:600}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .grid .card{margin:0}
+  .lbl{font-size:13px;color:var(--mut)}
+  .t{font-size:32px;font-weight:700;font-variant-numeric:tabular-nums}
+  .noz .t{color:var(--hot)} .bedc .t{color:var(--bed)}
+  .tgt{font-size:14px;color:var(--mut);font-variant-numeric:tabular-nums}
+  .small{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;margin-top:12px}
+  .small div{background:var(--card);border-radius:12px;padding:10px 4px}
+  .small b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
+  footer{color:var(--mut);font-size:12px;text-align:center;margin-top:14px}
+</style>
+</head>
+<body>
+<header><h1>Ender-3 V3 KE</h1><span id="st" class="pill">connessione…</span></header>
+
+<div class="card">
+  <div class="file" id="file">—</div>
+  <div class="big" id="pct">–%</div>
+  <div class="bar"><i id="barf"></i></div>
+  <div class="row"><span>Layer <b id="layer">–</b></span><span>Mancano <b id="left">–</b></span></div>
+  <div class="row" style="margin-top:4px"><span>Trascorso <b id="job">–</b></span><span>Fine ≈ <b id="eta">–</b></span></div>
+</div>
+
+<div class="grid">
+  <div class="card noz"><div class="lbl">Ugello</div><div class="t" id="nt">–</div><div class="tgt">→ <span id="ntt">–</span> °C</div></div>
+  <div class="card bedc"><div class="lbl">Piano</div><div class="t" id="bt">–</div><div class="tgt">→ <span id="btt">–</span> °C</div></div>
+</div>
+
+<div class="small">
+  <div><span class="lbl">Ventola</span><b id="fan">–</b></div>
+  <div><span class="lbl">Velocità</span><b id="spd">–</b></div>
+  <div><span class="lbl">Flusso</span><b id="flow">–</b></div>
+</div>
+
+<footer id="upd">—</footer>
+
+<script>
+let HOST = "stampante";
+const STATES = {0:"ferma",1:"in stampa",2:"finita",3:"fallita",4:"annullata",5:"in pausa"};
+const s = {};
+let ws, hb, last = 0;
+const $ = id => document.getElementById(id);
+const num = v => { const n = parseFloat(v); return isNaN(n) ? null : n; };
+const hms = sec => { sec = num(sec); if (sec == null) return "–"; sec = Math.max(0, Math.round(sec));
+  const h = Math.floor(sec/3600), m = Math.floor(sec%3600/60); return h ? `${h}h ${String(m).padStart(2,"0")}m` : `${m}m ${String(sec%60).padStart(2,"0")}s`; };
+
+function render(){
+  const st = s.state, err = s.err && s.err.errcode;
+  const pill = $("st");
+  pill.textContent = err ? "errore " + err : (STATES[st] ?? "connesso");
+  pill.className = "pill" + (err ? " bad" : st === 1 ? " on" : "");
+  $("file").textContent = (s.printFileName || "—").split("/").pop();
+  const p = num(s.printProgress) ?? 0;
+  $("pct").textContent = p + "%"; $("barf").style.width = p + "%";
+  $("layer").textContent = (s.layer ?? "–") + "/" + (s.TotalLayer ?? "–");
+  $("left").textContent = hms(s.printLeftTime); $("job").textContent = hms(s.printJobTime);
+  const L = num(s.printLeftTime);
+  $("eta").textContent = st === 1 && L ? new Date(Date.now() + L*1000).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}) : "–";
+  const f1 = v => { v = num(v); return v == null ? "–" : v.toFixed(1); };
+  $("nt").textContent = f1(s.nozzleTemp) + "°"; $("ntt").textContent = f1(s.targetNozzleTemp);
+  $("bt").textContent = f1(s.bedTemp0) + "°"; $("btt").textContent = f1(s.targetBedTemp0);
+  $("fan").textContent = (s.modelFanPct ?? "–") + "%";
+  $("spd").textContent = (s.curFeedratePct ?? "–") + "%";
+  $("flow").textContent = (s.curFlowratePct ?? "–") + "%";
+}
+
+let age = null;
+async function poll(){
+  try {
+    const r = await fetch("status", {cache:"no-store"});
+    const j = await r.json();
+    HOST = j.printer; age = j.age;
+    if (j.age != null) { Object.assign(s, j.s); last = Date.now() - j.age*1000; render(); }
+    if (j.age == null || j.age > 30) { $("st").textContent = "stampante non raggiungibile"; $("st").className = "pill bad"; }
+  } catch(e) { $("st").textContent = "PC non raggiungibile"; $("st").className = "pill bad"; }
+}
+setInterval(() => { $("upd").textContent = last ? `aggiornato ${Math.round((Date.now()-last)/1000)} s fa · ${HOST}` : `in attesa di ${HOST}…`; }, 1000);
+poll(); setInterval(poll, 2000);
+</script>
+</body>
+</html>
