@@ -2,7 +2,19 @@
 
 Uno schermino da telefono per seguire una **Creality Ender-3 V3 KE** (firmware originale Creality): avanzamento, layer, tempo mancante, ora di fine, temperature di ugello e piano, ventola, velocità e flusso.
 
-*A tiny phone-friendly status page for the Creality Ender-3 V3 KE (stock firmware). It reads the printer's websocket on port 9999 and shows progress, temperatures and ETA. Italian UI.*
+*A tiny phone-friendly status page for the Creality Ender-3 V3 KE (stock firmware). It reads the printer's websocket on port 9999 and shows progress, temperatures and ETA. Seven retro themes, including one that catches fire as the nozzle heats up. Italian UI.*
+
+<p align="center">
+  <img src="docs/rovente.png" width="190" alt="Ugello rovente">
+  <img src="docs/pompa.png" width="190" alt="Pompa di benzina anni 80">
+  <img src="docs/arcade.png" width="190" alt="Sala giochi 1986">
+  <img src="docs/terminale.png" width="190" alt="Terminale 1982">
+</p>
+<p align="center">
+  <img src="docs/radio.png" width="190" alt="Radio della nonna">
+  <img src="docs/jukebox.png" width="190" alt="Juke-box anni 50">
+  <img src="docs/luna.png" width="190" alt="Missione Luna 1969">
+</p>
 
 ## Temi
 
@@ -16,8 +28,11 @@ Le cifre sono display a 7 segmenti, come i vecchi contatori. Il pulsante 🎨 in
 | `radio` | Radio della nonna: legno, ottone, display verde acqua |
 | `jukebox` | Juke-box anni '50: pavimento a scacchi, rosa e menta, cifre rosse |
 | `luna` | Missione Luna 1969: pannelli grigi tra le stelle, cifre verdi |
+| `rovente` | 🔥 Ugello rovente: segue la temperatura vera dell'ugello. Fredda è blu ghiaccio, mentre scalda diventa arancio e poi rossa, alla temperatura di stampa compaiono le fiamme animate dal basso. Quando la stampa finisce si raffredda insieme alla stampante. |
 
 Si può anche aprire direttamente un tema: `http://IP-DEL-PC/?tema=arcade`.
+
+Per vedere il tema `rovente` a stampante spenta si può forzare la temperatura: `http://IP-DEL-PC/?tema=rovente&caldo=210`.
 
 ## Come funziona
 

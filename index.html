@@ -106,6 +106,36 @@
     --led2:#e6ffe5; --glow2:#7dff7a; --radius:4px;
   }
 
+  /* 7. Ugello rovente: si scalda insieme alla stampante (--heat da 0 a 1, impostato da JS) */
+  :root{--heat:0}
+  [data-theme="rovente"]{
+    --bg:linear-gradient(180deg,#0d1620,#1a2633 60%,#0b0f14);
+    --sign-bg:linear-gradient(180deg,#1c1c20,#0c0c0e); --sign-fg:#ffd9a0;
+    --title-shadow:0 0 calc(3px + 14px * var(--heat)) #ff5a00,0 0 calc(30px * var(--heat)) #ff2a00;
+    --title-font:"Bungee",Impact,sans-serif; --title-size:30px;
+    --s1:#ffd000; --s2:#ff6a00; --s3:#c81e00;
+    --plate-bg:linear-gradient(180deg,#2a2d3399,#151619b3);
+    --plate-shadow:0 0 0 1px #000,0 0 calc(4px + 20px * var(--heat)) rgba(255,90,0,calc(.15 + .6 * var(--heat))),inset 0 1px 0 #ffffff1a;
+    --screw:radial-gradient(circle at 35% 35%,#ccc,#555 60%,#222);
+    --lbl:#ff9a3c; --lbl-font:800 13px/1 "Barlow Condensed",sans-serif; --lbl-spacing:3px;
+    --dim:#e0d2c4; --lamp-lbl:#e0d2c4; --foot:#c0b0a0;
+    --glass:#0a0505; --led:#ffe7a3; --glow:#ff5a00; --ghost:#2a0d05; --unit:#ffb36b;
+    --led2:#ffffff; --glow2:#ff8a00; --radius:12px;
+  }
+  [data-theme="rovente"][data-heat="freddo"]{
+    --led:#9fd8ff; --glow:#2a8cff; --ghost:#0a1a2a; --lbl:#7fb8e8; --unit:#9fd8ff;
+    --led2:#dff2ff; --glow2:#2a8cff; --sign-fg:#cfe6ff; --s1:#9fd8ff; --s2:#3a7cc0; --s3:#1a3a5c}
+  [data-theme="rovente"][data-heat="tiepido"]{--led:#ffc27a; --glow:#ff7a1a; --ghost:#2a1408}
+  #glow{position:fixed; inset:0; z-index:0; pointer-events:none; opacity:0; transition:opacity 2s;
+    background:radial-gradient(140% 75% at 50% 112%,#ffd04a 0%,#ff6a00 22%,#c41a00 45%,#4a0700 70%,#0000 92%)}
+  #fire{position:fixed; left:0; bottom:0; width:100%; height:45vh; z-index:0; pointer-events:none;
+    display:none; filter:blur(3px); opacity:.95}
+  [data-theme="rovente"] #glow{opacity:calc(.9 * var(--heat))}
+  [data-theme="rovente"] #fire{display:block}
+  [data-theme="rovente"] body{padding-bottom:28vh}
+  [data-theme="rovente"] .plate{-webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px)}
+  body > :not(#glow):not(#fire):not(.toast){position:relative; z-index:1}
+
   /* ============ STRUTTURA ============ */
   *{box-sizing:border-box}
   html,body{margin:0}
@@ -196,6 +226,8 @@
 </style>
 </head>
 <body>
+<div id="glow"></div>
+<canvas id="fire" width="64" height="40"></canvas>
 
 <div class="sign">
   <button class="tema" id="tema" aria-label="Cambia sfondo" title="Cambia sfondo">🎨</button>
@@ -260,6 +292,7 @@ const THEMES = [
   {id:"radio",     name:"Radio della nonna",    sub:"ONDE MEDIE · FILAMENTO FM",       color:"#c9973c"},
   {id:"jukebox",   name:"Juke-box anni '50",    sub:"SELEZIONE A7 · ROCK 'N' PLA",     color:"#e84a8a"},
   {id:"luna",      name:"Missione Luna 1969",   sub:"CONTROLLO MISSIONE · TUTTO OK",   color:"#e9ecef"},
+  {id:"rovente",   name:"🔥 Ugello rovente",     sub:"",                                color:"#0c0c0e"},
 ];
 let ti = 0;
 function applyTheme(i, announce){
@@ -267,6 +300,7 @@ function applyTheme(i, announce){
   const t = THEMES[ti];
   document.documentElement.dataset.theme = t.id;
   document.getElementById("sub").textContent = t.sub;
+  if (t.id === "rovente") { try { heatUpdate(); } catch(_) {} }   // al primo avvio ci pensa render()
   document.querySelector('meta[name="theme-color"]').content = t.color;
   try { localStorage.setItem("ender-tema", t.id); } catch(_){}
   if (announce) {
@@ -333,7 +367,61 @@ function render(){
   seg("fan", s.modelFanPct ?? 0, 3);
   seg("spd", s.curFeedratePct ?? 0, 3);
   seg("flow", s.curFlowratePct ?? 0, 3);
+  heatUpdate();
 }
+
+// ---------- Tema "Ugello rovente" ----------
+// ?caldo=150 forza la temperatura usata per l'effetto (per provarlo a stampante fredda).
+const FAKE = num(new URLSearchParams(location.search).get("caldo"));
+let heat = 0, fireLevel = 0;
+function heatUpdate(){
+  const t = FAKE ?? num(s.nozzleTemp) ?? 20;
+  const target = num(s.targetNozzleTemp) || 0;
+  heat = Math.max(0, Math.min(1, (t - 35) / (200 - 35)));
+  fireLevel = Math.max(0, Math.min(1, (heat - 0.55) / 0.45));
+  const root = document.documentElement;
+  root.style.setProperty("--heat", heat.toFixed(3));
+  const lvl = t < 45 ? "freddo" : t < 120 ? "tiepido" : t < 190 ? "caldo" : "rovente";
+  root.dataset.heat = lvl;
+  if (root.dataset.theme !== "rovente") return;
+  const cooling = !FAKE && target === 0 && t >= 45;
+  $("sub").textContent =
+    cooling           ? `SI RAFFREDDA · ${Math.round(t)}°C` :
+    lvl === "freddo"  ? "UGELLO FREDDO · IN ATTESA" :
+    lvl === "tiepido" ? `SI SCALDA… ${Math.round(t)}°C` :
+    lvl === "caldo"   ? `QUASI PRONTO · ${Math.round(t)}°C` :
+                        `ROVENTE · ${Math.round(t)}°C`;
+}
+
+// Fuoco a "pixel" che sale dal basso; la sua forza segue fireLevel.
+(function fire(){
+  const cv = $("fire"), ctx = cv.getContext("2d"), W = cv.width, H = cv.height;
+  const px = new Uint8Array(W * H), img = ctx.createImageData(W, H);
+  const stops = [[0,0,0,0],[8,122,10,0],[16,212,42,0],[24,255,122,0],[30,255,196,0],[36,255,246,208]];
+  const pal = [];
+  for (let i = 0; i <= 36; i++) {
+    let a = stops[0], b = stops[stops.length-1];
+    for (let k = 0; k < stops.length - 1; k++) if (i >= stops[k][0] && i <= stops[k+1][0]) { a = stops[k]; b = stops[k+1]; break; }
+    const f = b[0] === a[0] ? 0 : (i - a[0]) / (b[0] - a[0]);
+    pal.push([0,1,2].map(c => Math.round(a[c+1] + (b[c+1] - a[c+1]) * f)).concat(Math.min(255, i * 26)));
+  }
+  let lastT = 0;
+  function step(ts){
+    requestAnimationFrame(step);
+    if (document.documentElement.dataset.theme !== "rovente" || document.hidden || ts - lastT < 50) return;
+    lastT = ts;
+    const src = Math.round(36 * fireLevel);
+    for (let x = 0; x < W; x++) px[(H-1)*W + x] = Math.random() < 0.85 ? src : Math.max(0, src - 8);
+    for (let x = 0; x < W; x++) for (let y = 1; y < H; y++) {
+      const i = y*W + x, r = (Math.random() * 3) | 0;
+      const d = i - r + 1 - W;
+      if (d >= 0) px[d] = Math.max(0, px[i] - (r & 1));
+    }
+    for (let i = 0; i < W*H; i++) { const c = pal[px[i]], o = i*4; img.data[o]=c[0]; img.data[o+1]=c[1]; img.data[o+2]=c[2]; img.data[o+3]=c[3]; }
+    ctx.putImageData(img, 0, 0);
+  }
+  requestAnimationFrame(step);
+})();
 
 async function poll(){
   try {
