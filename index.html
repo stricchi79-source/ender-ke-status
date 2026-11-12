@@ -3,101 +3,224 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#111418">
+<meta name="theme-color" content="#b3261e">
 <title>Ender KE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Barlow+Condensed:wght@600;800&display=swap" rel="stylesheet">
 <style>
-  :root{--bg:#f4f5f7;--card:#fff;--fg:#15181d;--mut:#6b7280;--bar:#e5e7eb;--acc:#16a34a;--hot:#ea580c;--bed:#2563eb;--err:#dc2626}
-  @media (prefers-color-scheme:dark){:root{--bg:#111418;--card:#1b1f25;--fg:#eef0f3;--mut:#9aa1ab;--bar:#2b3038;--acc:#22c55e;--hot:#fb923c;--bed:#60a5fa;--err:#f87171}}
+  @font-face{font-family:"DSEG7";font-weight:700;font-display:swap;
+    src:url("https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Bold.woff2") format("woff2")}
+
+  :root{
+    --enamel:#f3e9d2; --enamel2:#e8dcbf; --ink:#1d1a16;
+    --red:#c8281e; --orange:#e8731c; --yellow:#f2b51d;
+    --steel1:#d9dde1; --steel2:#9aa2aa; --steel3:#6b737b;
+    --glass:#120b06; --led:#ff8a1e; --ledglow:#ff6a00; --ghost:#2a1508;
+    --green:#3ddc5a; --lamp-off:#4a3a2a;
+  }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.35 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:16px;padding-top:max(16px,env(safe-area-inset-top))}
-  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-  h1{font-size:18px;margin:0}
-  .pill{font-size:13px;padding:4px 10px;border-radius:99px;background:var(--bar);color:var(--mut)}
-  .pill.on{background:var(--acc);color:#fff}
-  .pill.bad{background:var(--err);color:#fff}
-  .card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 2px #0001}
-  .file{font-size:14px;color:var(--mut);word-break:break-all;margin-bottom:8px}
-  .big{font-size:44px;font-weight:700;font-variant-numeric:tabular-nums}
-  .bar{height:12px;background:var(--bar);border-radius:6px;overflow:hidden;margin:8px 0 12px}
-  .bar>i{display:block;height:100%;width:0;background:var(--acc);transition:width .6s}
-  .row{display:flex;justify-content:space-between;color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums}
-  .row b{color:var(--fg);font-weight:600}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .grid .card{margin:0}
-  .lbl{font-size:13px;color:var(--mut)}
-  .t{font-size:32px;font-weight:700;font-variant-numeric:tabular-nums}
-  .noz .t{color:var(--hot)} .bedc .t{color:var(--bed)}
-  .tgt{font-size:14px;color:var(--mut);font-variant-numeric:tabular-nums}
-  .small{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;margin-top:12px}
-  .small div{background:var(--card);border-radius:12px;padding:10px 4px}
-  .small b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
-  footer{color:var(--mut);font-size:12px;text-align:center;margin-top:14px}
+  html,body{margin:0}
+  body{
+    min-height:100vh; color:var(--ink);
+    font:600 16px/1.3 "Barlow Condensed",system-ui,sans-serif;
+    padding:0 16px 24px; padding-bottom:max(24px,env(safe-area-inset-bottom));
+    background:
+      repeating-linear-gradient(0deg,#0000 0 3px,#0000000a 3px 4px),
+      radial-gradient(120% 80% at 50% 0%,var(--enamel),var(--enamel2));
+    background-attachment:fixed;
+  }
+
+  /* Insegna in alto con le strisce */
+  .sign{margin:0 -16px 18px; padding-top:max(14px,env(safe-area-inset-top));
+    background:var(--red); color:#fff; text-align:center; position:relative;
+    box-shadow:0 4px 0 #0002}
+  .sign h1{margin:0; font:400 30px/1 "Bungee",Impact,sans-serif; letter-spacing:1px;
+    text-shadow:2px 2px 0 #7a140e}
+  .sign .sub{font:800 13px/1 "Barlow Condensed",sans-serif; letter-spacing:4px; opacity:.9; padding:6px 0 12px}
+  .stripes{height:30px; background:
+    linear-gradient(var(--red) 0 33%,var(--orange) 33% 66%,var(--yellow) 66%);}
+  .stripes.thin{height:12px; margin:0 -16px}
+
+  /* Piastra metallica */
+  .plate{position:relative; border-radius:14px; padding:14px; margin-bottom:14px;
+    background:
+      repeating-linear-gradient(90deg,#ffffff14 0 1px,#0000 1px 3px),
+      linear-gradient(180deg,var(--steel1),var(--steel2));
+    box-shadow:inset 0 1px 0 #fff9, inset 0 -2px 0 #0003, 0 3px 0 var(--steel3), 0 6px 14px #0003}
+  .plate::before,.plate::after{content:""; position:absolute; top:8px; width:8px; height:8px; border-radius:50%;
+    background:radial-gradient(circle at 35% 35%,#fff,#888 60%,#555); box-shadow:0 1px 0 #fff8}
+  .plate::before{left:8px} .plate::after{right:8px}
+
+  .lbl{font:800 13px/1 "Barlow Condensed",sans-serif; letter-spacing:3px; text-transform:uppercase;
+    color:var(--red); text-align:center; margin:2px 0 8px}
+
+  /* Finestra del display */
+  .win{position:relative; background:var(--glass); border-radius:8px; padding:10px 12px;
+    box-shadow:inset 0 3px 10px #000, inset 0 0 0 2px #000, 0 1px 0 #fff8; overflow:hidden; text-align:right}
+  .win::after{content:""; position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(160deg,#ffffff1c 0 30%,#0000 31%)}
+  .seg{position:relative; display:inline-block; font-family:"DSEG7","Courier New",monospace; font-weight:700;
+    font-variant-numeric:tabular-nums; line-height:1}
+  .seg .g{color:var(--ghost)}
+  .seg .v{position:absolute; right:0; top:0; color:var(--led);
+    text-shadow:0 0 6px var(--ledglow),0 0 14px #ff6a0080}
+  .xl{font-size:56px} .lg{font-size:34px} .md{font-size:24px}
+  .unit{font:800 14px "Barlow Condensed",sans-serif; color:#c9a27a; margin-left:6px; vertical-align:top}
+
+  /* Barra a blocchetti LED */
+  .ledbar{display:grid; grid-template-columns:repeat(20,1fr); gap:3px; margin-top:10px}
+  .ledbar i{height:12px; border-radius:2px; background:var(--ghost)}
+  .ledbar i.on{background:var(--led); box-shadow:0 0 6px var(--ledglow)}
+
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  .grid2 .plate{margin:0}
+  .tgt{display:flex; justify-content:space-between; align-items:center; margin-top:8px;
+    font:800 12px "Barlow Condensed",sans-serif; letter-spacing:2px; color:#3b3f44}
+  .tgt .seg{font-size:16px}
+  .tgt .seg .v{color:#ffd27a; text-shadow:0 0 5px #ffb000}
+  .tgt .win{padding:4px 8px}
+
+  .row3{display:grid; grid-template-columns:repeat(3,1fr); gap:10px}
+  .row3 .win{text-align:center}
+
+  .info{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px}
+  .info .lbl{margin-bottom:6px}
+
+  /* Lampade di stato */
+  .lamps{display:flex; justify-content:center; gap:18px; margin:4px 0 14px}
+  .lamp{display:flex; flex-direction:column; align-items:center; gap:4px;
+    font:800 11px "Barlow Condensed",sans-serif; letter-spacing:2px; color:#5a4a3a}
+  .lamp i{width:22px; height:22px; border-radius:50%; border:3px solid #8c8c8c;
+    background:radial-gradient(circle at 35% 35%,#7a6a5a,var(--lamp-off)); box-shadow:inset 0 2px 4px #0006}
+  .lamp.on.g i{background:radial-gradient(circle at 35% 35%,#d6ffd9,var(--green)); box-shadow:0 0 12px var(--green)}
+  .lamp.on.y i{background:radial-gradient(circle at 35% 35%,#fff3c4,var(--yellow)); box-shadow:0 0 12px var(--yellow)}
+  .lamp.on.r i{background:radial-gradient(circle at 35% 35%,#ffd0cc,#ff3b2f); box-shadow:0 0 12px #ff3b2f}
+
+  .file{font:800 15px "Barlow Condensed",sans-serif; text-align:center; color:#3b3f44; margin:-2px 0 10px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  footer{text-align:center; font:600 13px "Barlow Condensed",sans-serif; color:#6a5d4a; margin-top:6px; letter-spacing:1px}
+  .msg{text-align:center; font:800 14px "Barlow Condensed",sans-serif; letter-spacing:2px; color:var(--red); min-height:18px}
+
+  @media (max-width:360px){ .xl{font-size:46px} .lg{font-size:28px} .sign h1{font-size:25px} }
 </style>
 </head>
 <body>
-<header><h1>Ender-3 V3 KE</h1><span id="st" class="pill">connessione…</span></header>
 
-<div class="card">
+<div class="sign">
+  <h1>ENDER-3 V3 KE</h1>
+  <div class="sub">STAZIONE DI STAMPA · PLA SUPER</div>
+  <div class="stripes"></div>
+</div>
+
+<div class="lamps">
+  <div class="lamp g" id="l-print"><i></i>STAMPA</div>
+  <div class="lamp y" id="l-pause"><i></i>PAUSA</div>
+  <div class="lamp g" id="l-done"><i></i>FINITA</div>
+  <div class="lamp r" id="l-err"><i></i>ERRORE</div>
+</div>
+<div class="msg" id="msg"></div>
+
+<div class="plate">
+  <div class="lbl">Avanzamento</div>
   <div class="file" id="file">—</div>
-  <div class="big" id="pct">–%</div>
-  <div class="bar"><i id="barf"></i></div>
-  <div class="row"><span>Layer <b id="layer">–</b></span><span>Mancano <b id="left">–</b></span></div>
-  <div class="row" style="margin-top:4px"><span>Trascorso <b id="job">–</b></span><span>Fine ≈ <b id="eta">–</b></span></div>
+  <div class="win"><span class="seg xl" id="pct"></span><span class="unit">%</span>
+    <div class="ledbar" id="bar"></div>
+  </div>
+  <div class="info">
+    <div><div class="lbl">Layer</div><div class="win"><span class="seg md" id="layer"></span></div></div>
+    <div><div class="lbl">Mancano h:mm</div><div class="win"><span class="seg md" id="left"></span></div></div>
+    <div><div class="lbl">Trascorso</div><div class="win"><span class="seg md" id="job"></span></div></div>
+    <div><div class="lbl">Fine alle</div><div class="win"><span class="seg md" id="eta"></span></div></div>
+  </div>
 </div>
 
-<div class="grid">
-  <div class="card noz"><div class="lbl">Ugello</div><div class="t" id="nt">–</div><div class="tgt">→ <span id="ntt">–</span> °C</div></div>
-  <div class="card bedc"><div class="lbl">Piano</div><div class="t" id="bt">–</div><div class="tgt">→ <span id="btt">–</span> °C</div></div>
+<div class="grid2">
+  <div class="plate">
+    <div class="lbl">Ugello °C</div>
+    <div class="win"><span class="seg lg" id="nt"></span></div>
+    <div class="tgt">META <div class="win"><span class="seg" id="ntt"></span></div></div>
+  </div>
+  <div class="plate">
+    <div class="lbl">Piano °C</div>
+    <div class="win"><span class="seg lg" id="bt"></span></div>
+    <div class="tgt">META <div class="win"><span class="seg" id="btt"></span></div></div>
+  </div>
 </div>
 
-<div class="small">
-  <div><span class="lbl">Ventola</span><b id="fan">–</b></div>
-  <div><span class="lbl">Velocità</span><b id="spd">–</b></div>
-  <div><span class="lbl">Flusso</span><b id="flow">–</b></div>
+<div class="plate" style="margin-top:14px">
+  <div class="row3">
+    <div><div class="lbl">Ventola %</div><div class="win"><span class="seg md" id="fan"></span></div></div>
+    <div><div class="lbl">Velocità %</div><div class="win"><span class="seg md" id="spd"></span></div></div>
+    <div><div class="lbl">Flusso %</div><div class="win"><span class="seg md" id="flow"></span></div></div>
+  </div>
 </div>
 
+<div class="stripes thin"></div>
 <footer id="upd">—</footer>
 
 <script>
 let HOST = "stampante";
-const STATES = {0:"ferma",1:"in stampa",2:"finita",3:"fallita",4:"annullata",5:"in pausa"};
 const s = {};
-let ws, hb, last = 0;
+let last = 0;
 const $ = id => document.getElementById(id);
 const num = v => { const n = parseFloat(v); return isNaN(n) ? null : n; };
-const hms = sec => { sec = num(sec); if (sec == null) return "–"; sec = Math.max(0, Math.round(sec));
-  const h = Math.floor(sec/3600), m = Math.floor(sec%3600/60); return h ? `${h}h ${String(m).padStart(2,"0")}m` : `${m}m ${String(sec%60).padStart(2,"0")}s`; };
+
+// Display a 7 segmenti: cifre accese sopra, "8" spenti sotto.
+function seg(id, text, width){
+  text = String(text);
+  if (width) text = text.padStart(width, "!");      // "!" = cifra vuota in DSEG
+  const el = $(id);
+  el.innerHTML = '<span class="g"></span><span class="v"></span>';
+  el.firstChild.textContent = text.replace(/[0-9!\-]/g, "8");
+  el.lastChild.textContent = text;
+}
+const hm = sec => { sec = num(sec); if (sec == null) return "-:--"; sec = Math.max(0, Math.round(sec));
+  return Math.floor(sec/3600) + ":" + String(Math.floor(sec%3600/60)).padStart(2,"0"); };
+const t1 = v => { v = num(v); return v == null ? "---.-" : v.toFixed(1); };
+
+const bar = $("bar");
+for (let i = 0; i < 20; i++) bar.appendChild(document.createElement("i"));
+
+function lamps(st, err){
+  $("l-print").classList.toggle("on", st === 1);
+  $("l-pause").classList.toggle("on", st === 5);
+  $("l-done").classList.toggle("on", st === 2);
+  $("l-err").classList.toggle("on", !!err || st === 3);
+}
 
 function render(){
   const st = s.state, err = s.err && s.err.errcode;
-  const pill = $("st");
-  pill.textContent = err ? "errore " + err : (STATES[st] ?? "connesso");
-  pill.className = "pill" + (err ? " bad" : st === 1 ? " on" : "");
+  lamps(st, err);
+  $("msg").textContent = err ? "ERRORE " + err : st === 4 ? "STAMPA ANNULLATA" : st === 0 ? "STAMPANTE FERMA" : "";
   $("file").textContent = (s.printFileName || "—").split("/").pop();
-  const p = num(s.printProgress) ?? 0;
-  $("pct").textContent = p + "%"; $("barf").style.width = p + "%";
-  $("layer").textContent = (s.layer ?? "–") + "/" + (s.TotalLayer ?? "–");
-  $("left").textContent = hms(s.printLeftTime); $("job").textContent = hms(s.printJobTime);
+  const p = Math.max(0, Math.min(100, num(s.printProgress) ?? 0));
+  seg("pct", p, 3);
+  [...bar.children].forEach((b, i) => b.classList.toggle("on", i < Math.round(p / 5)));
+  seg("layer", (s.layer ?? 0) + "-" + (s.TotalLayer ?? 0));
+  seg("left", hm(s.printLeftTime), 5);
+  seg("job", hm(s.printJobTime), 5);
   const L = num(s.printLeftTime);
-  $("eta").textContent = st === 1 && L ? new Date(Date.now() + L*1000).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}) : "–";
-  const f1 = v => { v = num(v); return v == null ? "–" : v.toFixed(1); };
-  $("nt").textContent = f1(s.nozzleTemp) + "°"; $("ntt").textContent = f1(s.targetNozzleTemp);
-  $("bt").textContent = f1(s.bedTemp0) + "°"; $("btt").textContent = f1(s.targetBedTemp0);
-  $("fan").textContent = (s.modelFanPct ?? "–") + "%";
-  $("spd").textContent = (s.curFeedratePct ?? "–") + "%";
-  $("flow").textContent = (s.curFlowratePct ?? "–") + "%";
+  if (st === 1 && L) { const d = new Date(Date.now() + L*1000);
+    seg("eta", String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0")); }
+  else seg("eta", "--:--");
+  seg("nt", t1(s.nozzleTemp), 5); seg("ntt", t1(s.targetNozzleTemp), 5);
+  seg("bt", t1(s.bedTemp0), 5);   seg("btt", t1(s.targetBedTemp0), 5);
+  seg("fan", s.modelFanPct ?? 0, 3);
+  seg("spd", s.curFeedratePct ?? 0, 3);
+  seg("flow", s.curFlowratePct ?? 0, 3);
 }
 
-let age = null;
 async function poll(){
   try {
     const r = await fetch("status", {cache:"no-store"});
     const j = await r.json();
-    HOST = j.printer; age = j.age;
+    HOST = j.printer;
     if (j.age != null) { Object.assign(s, j.s); last = Date.now() - j.age*1000; render(); }
-    if (j.age == null || j.age > 30) { $("st").textContent = "stampante non raggiungibile"; $("st").className = "pill bad"; }
-  } catch(e) { $("st").textContent = "PC non raggiungibile"; $("st").className = "pill bad"; }
+    if (j.age == null || j.age > 30) { $("msg").textContent = "STAMPANTE NON RAGGIUNGIBILE"; lamps(null, true); }
+  } catch(e) { $("msg").textContent = "PC NON RAGGIUNGIBILE"; lamps(null, true); }
 }
+render();
 setInterval(() => { $("upd").textContent = last ? `aggiornato ${Math.round((Date.now()-last)/1000)} s fa · ${HOST}` : `in attesa di ${HOST}…`; }, 1000);
 poll(); setInterval(poll, 2000);
 </script>
