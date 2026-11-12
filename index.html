@@ -347,6 +347,21 @@ function lamps(st, err){
   $("l-err").classList.toggle("on", !!err || st === 3);
 }
 
+// Il firmware Creality, se nel G-code non trova l'altezza layer (es. file di OrcaSlicer),
+// calcola il layer come Z / 0.1 mm: con layer da 0.2 mm il numero raddoppia.
+// In quel caso stimiamo il layer dall'avanzamento sul totale (che invece e' giusto).
+function realLayer(p){
+  const L = num(s.layer), T = num(s.TotalLayer);
+  if (L == null || !T) return L ?? 0;
+  const z = num((String(s.curPosition || "").match(/Z:\s*(-?[\d.]+)/) || [])[1]);
+  const looksLikeZ = z != null && z > 0.5 && Math.abs(L - z * 10) <= 1.5;
+  if (looksLikeZ || L > T) {
+    if (s.state === 2) return T;                       // stampa finita
+    return Math.min(T, Math.max(1, Math.ceil(p / 100 * T)));
+  }
+  return Math.min(L, T);
+}
+
 function render(){
   const st = s.state, err = s.err && s.err.errcode;
   lamps(st, err);
@@ -355,7 +370,7 @@ function render(){
   const p = Math.max(0, Math.min(100, num(s.printProgress) ?? 0));
   seg("pct", p, 3);
   [...bar.children].forEach((b, i) => b.classList.toggle("on", i < Math.round(p / 5)));
-  seg("layer", (s.layer ?? 0) + "-" + (s.TotalLayer ?? 0));
+  seg("layer", realLayer(p) + "-" + (s.TotalLayer ?? 0));
   seg("left", hm(s.printLeftTime), 5);
   seg("job", hm(s.printJobTime), 5);
   const L = num(s.printLeftTime);

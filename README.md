@@ -72,6 +72,12 @@ Poi dal telefono apri `http://IP-DEL-PC` (per esempio `http://192.168.1.14`). Pu
 - **"stampante non raggiungibile":** l'IP della stampante è cambiato (DHCP). Riavvia il server con il nuovo IP, oppure fissa l'IP della stampante nel router.
 - **Su Linux la porta 80 richiede permessi:** usa una porta sopra 1024, per esempio `python server.py 192.168.1.12 8080`.
 
+## Il numero del layer
+
+Con i G-code di OrcaSlicer (e probabilmente di altri slicer diversi da Creality Print) il firmware non trova l'altezza layer e calcola il layer come **Z ÷ 0,1 mm**: con layer da 0,2 mm il numero va al doppio, e a metà stampa supera già il totale (es. "36 di 30"). Il totale dei layer invece lo legge giusto.
+
+La pagina se ne accorge (il numero della stampante coincide con Z × 10, oppure supera il totale) e in quel caso stima il layer dall'avanzamento sul totale. Con stampe dove ogni layer ha più o meno lo stesso lavoro la stima è precisa; con forme molto irregolari può sbagliare di qualche layer.
+
 ## Campi usati
 
 Dal websocket della stampante: `state`, `printFileName`, `printProgress`, `printJobTime`, `printLeftTime`, `layer`, `TotalLayer`, `nozzleTemp`, `targetNozzleTemp`, `bedTemp0`, `targetBedTemp0`, `modelFanPct`, `curFeedratePct`, `curFlowratePct`, `err`. Sono i nomi usati dal firmware Creality, non documentati ufficialmente: dovrebbe funzionare anche su altre stampanti Creality con lo stesso firmware (K1, K1C, K1 Max), ma l'ho provato solo sulla Ender-3 V3 KE.
