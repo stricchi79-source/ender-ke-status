@@ -5,12 +5,22 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#c8281e">
 <title>Ender KE</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Barlow+Condensed:wght@600;800&family=VT323&family=Pacifico&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ender KE">
 <style>
-  @font-face{font-family:"DSEG7";font-weight:700;font-display:swap;
-    src:url("https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Bold.woff2") format("woff2")}
+  /* Font ospitati qui: nessuna richiesta esterna, funzionano anche senza internet */
+  @font-face{font-family:"DSEG7";font-weight:700;font-display:swap;src:url(fonts/DSEG7Classic-Bold.woff2) format("woff2")}
+  @font-face{font-family:"Bungee";font-weight:400;font-display:swap;src:url(fonts/bungee-latin-400-normal.woff2) format("woff2")}
+  @font-face{font-family:"Barlow Condensed";font-weight:600;font-display:swap;src:url(fonts/barlow-condensed-latin-600-normal.woff2) format("woff2")}
+  @font-face{font-family:"Barlow Condensed";font-weight:800;font-display:swap;src:url(fonts/barlow-condensed-latin-800-normal.woff2) format("woff2")}
+  @font-face{font-family:"VT323";font-weight:400;font-display:swap;src:url(fonts/vt323-latin-400-normal.woff2) format("woff2")}
+  @font-face{font-family:"Pacifico";font-weight:400;font-display:swap;src:url(fonts/pacifico-latin-400-normal.woff2) format("woff2")}
+  @font-face{font-family:"Orbitron";font-weight:700;font-display:swap;src:url(fonts/orbitron-latin-700-normal.woff2) format("woff2")}
+  @font-face{font-family:"Orbitron";font-weight:900;font-display:swap;src:url(fonts/orbitron-latin-900-normal.woff2) format("woff2")}
 
   /* ============ TEMI ============ */
   /* 1. Pompa di benzina anni 80 */
@@ -438,12 +448,43 @@ function heatUpdate(){
   requestAnimationFrame(step);
 })();
 
+// ---------- Avviso a fine stampa (con la pagina aperta) ----------
+// Suono + vibrazione quando la stampa finisce o va in errore. I browser fanno suonare
+// solo dopo un tocco sulla pagina, quindi l'audio si sblocca al primo tocco.
+let actx = null, prevState = null, prevErr = 0;
+addEventListener("pointerdown", () => {
+  try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume(); } catch(_) {}
+}, {passive:true});
+function beep(notes){
+  if (!actx) return;
+  let t = actx.currentTime + 0.05;
+  for (const [f, d] of notes) {
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = "square"; o.frequency.value = f; o.connect(g); g.connect(actx.destination);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d); o.start(t); o.stop(t + d + 0.02); t += d + 0.06;
+  }
+}
+function alertUser(kind){
+  const done = kind === "done";
+  beep(done ? [[880,.15],[1175,.15],[1568,.35]] : [[440,.3],[330,.3],[440,.3],[330,.5]]);
+  try { navigator.vibrate && navigator.vibrate(done ? [200,100,200] : [600,200,600,200,600]); } catch(_) {}
+  document.title = done ? "✅ Stampa finita" : "⚠️ Errore stampante";
+}
+function watchChanges(){
+  const st = s.state, err = (s.err && Number(s.err.errcode)) || 0;
+  if (prevState !== null && st !== prevState && st === 2 && (prevState === 1 || prevState === 5)) alertUser("done");
+  if (err && err !== prevErr && prevState !== null) alertUser("err");
+  if (st === 1) document.title = `${Math.round(num(s.printProgress) ?? 0)}% · Ender KE`;
+  prevState = st; prevErr = err;
+}
+
 async function poll(){
   try {
     const r = await fetch("status", {cache:"no-store"});
     const j = await r.json();
     HOST = j.printer;
-    if (j.age != null) { Object.assign(s, j.s); last = Date.now() - j.age*1000; render(); }
+    if (j.age != null) { Object.assign(s, j.s); last = Date.now() - j.age*1000; render(); watchChanges(); }
     if (j.age == null || j.age > 30) { $("msg").textContent = "STAMPANTE NON RAGGIUNGIBILE"; lamps(null, true); }
   } catch(e) { $("msg").textContent = "PC NON RAGGIUNGIBILE"; lamps(null, true); }
 }

@@ -46,7 +46,7 @@ La stampante con il firmware originale manda lo stato su un websocket (`ws://IP:
 - serve la pagina `index.html`;
 - espone lo stato in JSON su `/status`, che la pagina interroga ogni 2 secondi.
 
-Non serve root, Klipper esposto o Moonraker.
+Non serve root, Klipper esposto o Moonraker. Pagina e font sono tutti in locale: non serve internet, basta la rete di casa.
 
 ## Requisiti
 
@@ -63,7 +63,34 @@ python server.py 192.168.1.12
 - primo argomento: IP della stampante (lo trovi sul display della stampante, in Impostazioni → Rete);
 - secondo argomento, facoltativo: porta del server, predefinita `80`.
 
-Poi dal telefono apri `http://IP-DEL-PC` (per esempio `http://192.168.1.14`). Puoi aggiungerla alla schermata Home dal menu del browser, così si apre come un'app.
+Poi dal telefono apri `http://IP-DEL-PC` (per esempio `http://192.168.1.14`).
+
+### Come app sul telefono
+
+Dal menu del browser scegli **Aggiungi a schermata Home** (Android) o **Condividi → Aggiungi alla schermata Home** (iPhone): compare l'icona col display arancione e la pagina si apre a schermo intero, senza barre del browser.
+
+### Avvio automatico all'accensione del PC (Windows)
+
+Doppio clic su `avvio-automatico.bat`, scrivi l'IP della stampante e basta: il server parte subito e poi a ogni accensione, senza finestre aperte. Installa da solo le dipendenze.
+
+Per toglierlo:
+
+```
+powershell -ExecutionPolicy Bypass -File avvio-automatico.ps1 -Rimuovi
+```
+
+Su Linux si può usare un servizio systemd con `ExecStart=/usr/bin/python3 /percorso/server.py 192.168.1.12 8080`.
+
+### Avvisi a fine stampa
+
+- **Con la pagina aperta:** quando la stampa finisce il telefono suona e vibra (tre note allegre), se va in errore suona un allarme. Il browser permette il suono solo dopo che hai toccato la pagina almeno una volta. Il titolo della scheda mostra la percentuale.
+- **Anche a schermo spento:** installa l'app gratuita [ntfy](https://ntfy.sh) sul telefono, iscriviti a un argomento con un nome difficile da indovinare (es. `ender-mario-7f3k`) e avvia il server con:
+
+  ```bash
+  python server.py 192.168.1.12 --ntfy ender-mario-7f3k
+  ```
+
+  Arriva una notifica quando la stampa inizia, va in pausa, finisce (con la durata), viene annullata o va in errore. Con l'avvio automatico: `avvio-automatico.bat -Ntfy ender-mario-7f3k`. Chi conosce il nome dell'argomento può leggere le notifiche, per questo conviene sceglierne uno lungo e casuale.
 
 ## Problemi comuni
 
