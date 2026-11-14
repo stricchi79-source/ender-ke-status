@@ -1,20 +1,31 @@
 """Schermino di stato Ender-3 V3 KE: serve index.html e /status (JSON) sulla LAN.
 
-Uso: python server.py [IP_stampante] [porta] [--ntfy ARGOMENTO]
-     (default 192.168.1.12, porta 80)
+Uso: python server.py [IP_stampante|auto] [porta] [--ntfy ARGOMENTO]
+     (default auto, porta 80)
 Dal telefono apri http://IP-DEL-PC  (la porta 80 funziona meglio di 8000 sui telefoni)
+
+Con "auto" (o se l'IP indicato non risponde più) il server cerca la stampante
+nella rete locale (porta 9999 aperta): l'IP assegnato dal router può cambiare.
 
 Con --ntfy arriva una notifica sul telefono (app gratuita ntfy) quando la stampa
 finisce, si mette in pausa, viene annullata o va in errore, anche a schermo spento.
 """
-import argparse, asyncio, json, os, threading, time, urllib.request
+import argparse, asyncio, json, os, socket, sys, threading, time, urllib.request
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 
 import websockets
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+# Avviato con pythonw (esecuzione automatica, senza finestra): i messaggi vanno in server.log
+if sys.stdout is None or sys.stderr is None:
+    _log = open(os.path.join(HERE, "server.log"), "a", encoding="utf-8", buffering=1)
+    sys.stdout = sys.stderr = _log
+    print(f"--- avvio {time.strftime('%Y-%m-%d %H:%M:%S')} ---", flush=True)
+
 ap = argparse.ArgumentParser(description="Schermino di stato per Ender-3 V3 KE")
-ap.add_argument("printer", nargs="?", default=os.environ.get("ENDER_IP", "192.168.1.12"),
-                help="IP della stampante (default 192.168.1.12)")
+ap.add_argument("printer", nargs="?", default=os.environ.get("ENDER_IP", "auto"),
+                help="IP della stampante, oppure 'auto' per cercarla nella rete (default auto)")
 ap.add_argument("port", nargs="?", type=int, default=int(os.environ.get("ENDER_PORT", 80)),
                 help="porta del server (default 80)")
 ap.add_argument("--ntfy", default=os.environ.get("ENDER_NTFY", ""),
@@ -23,8 +34,10 @@ ap.add_argument("--ntfy-server", default=os.environ.get("ENDER_NTFY_SERVER", "ht
                 help="server ntfy (default https://ntfy.sh)")
 args = ap.parse_args()
 
-PRINTER, PORT = args.printer, args.port
-HERE = os.path.dirname(os.path.abspath(__file__))
+AUTO = args.printer == "auto"
+PORT = args.port
+WS_PORT = 9999
+printer = None if AUTO else args.printer   # IP in uso (None = da cercare)
 
 # Lo stato viene scritto dal thread del websocket e letto dai thread HTTP:
 # senza lucchetto json.dumps puo' fallire con "dictionary changed size during iteration".
@@ -96,11 +109,54 @@ class Osservatore:
 osservatore = Osservatore()
 
 
-async def pump():
-    global last
-    while True:
+# ---------- Ricerca della stampante nella rete ----------
+def local_subnet():
+    """Prefisso /24 della scheda di rete usata per uscire (es. '192.168.1.')."""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("192.168.1.1", 9))  # nessun pacchetto inviato: serve solo a scegliere l'interfaccia
+            ip = s.getsockname()[0]
+        return ip.rsplit(".", 1)[0] + "."
+    except OSError:
+        return None
+
+
+async def find_printer():
+    """Scansiona la /24 locale cercando la porta 9999 della stampante."""
+    net = local_subnet()
+    if not net:
+        return None
+
+    async def probe(ip):
         try:
-            async with websockets.connect(f"ws://{PRINTER}:9999", open_timeout=8, ping_interval=20) as ws:
+            _, w = await asyncio.wait_for(asyncio.open_connection(ip, WS_PORT), 0.8)
+            w.close()
+            return ip
+        except Exception:
+            return None
+
+    for ip in await asyncio.gather(*(probe(f"{net}{i}") for i in range(1, 255))):
+        if ip:
+            return ip
+    return None
+
+
+async def pump():
+    global last, printer
+    failures = 0
+    while True:
+        if printer is None or (failures >= 2 and AUTO) or failures >= 5:
+            found = await find_printer()
+            if found and found != printer:
+                print(f"stampante trovata su {found}", flush=True)
+            printer = found or printer
+            failures = 0
+            if printer is None:
+                await asyncio.sleep(15)
+                continue
+        try:
+            async with websockets.connect(f"ws://{printer}:{WS_PORT}", open_timeout=8, ping_interval=20) as ws:
+                failures = 0
                 async def hb():
                     while True:
                         await asyncio.sleep(10)
@@ -121,8 +177,14 @@ async def pump():
                 finally:
                     t.cancel()
         except Exception as e:
+            failures += 1
             print("websocket:", e, flush=True)
         await asyncio.sleep(3)
+
+
+# Solo questi file vengono serviti: non il resto della cartella (.git, server.log, script…)
+PUBBLICI = ("/", "/index.html", "/manifest.webmanifest")
+CARTELLE_PUBBLICHE = ("/fonts/", "/icons/")
 
 
 class H(SimpleHTTPRequestHandler):
@@ -132,7 +194,7 @@ class H(SimpleHTTPRequestHandler):
     def end_headers(self):
         if not self.path.startswith("/status"):
             # i font e le icone non cambiano: il telefono li tiene per un giorno
-            fisso = self.path.startswith(("/fonts/", "/icons/"))
+            fisso = self.path.startswith(CARTELLE_PUBBLICHE)
             self.send_header("Cache-Control", "max-age=86400" if fisso else "no-cache")
         super().end_headers()
 
@@ -140,15 +202,19 @@ class H(SimpleHTTPRequestHandler):
         if self.path.startswith("/status"):
             with lock:
                 body = json.dumps({"age": round(time.time() - last, 1) if last else None,
-                                   "printer": PRINTER, "s": state}).encode()
+                                   "printer": printer or "ricerca stampante…", "s": state}).encode()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.send_header("Cache-Control", "no-store")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
-        else:
+            return
+        path = self.path.split("?")[0]
+        if path in PUBBLICI or (path.startswith(CARTELLE_PUBBLICHE) and ".." not in path):
             super().do_GET()
+        else:
+            self.send_error(404)
 
     def log_message(self, *a):
         pass
@@ -157,7 +223,7 @@ class H(SimpleHTTPRequestHandler):
 H.extensions_map.update({".webmanifest": "application/manifest+json", ".woff2": "font/woff2"})
 
 threading.Thread(target=lambda: asyncio.run(pump()), daemon=True).start()
-print(f"Schermino su http://0.0.0.0:{PORT}  (stampante {PRINTER})", flush=True)
+print(f"Schermino su http://0.0.0.0:{PORT}  (stampante {args.printer})", flush=True)
 if args.ntfy:
     print(f"Notifiche ntfy attive: {args.ntfy_server.rstrip('/')}/{args.ntfy}", flush=True)
 ThreadingHTTPServer(("0.0.0.0", PORT), H).serve_forever()

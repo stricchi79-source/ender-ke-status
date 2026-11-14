@@ -57,10 +57,10 @@ Non serve root, Klipper esposto o Moonraker. Pagina e font sono tutti in locale:
 ## Uso
 
 ```bash
-python server.py 192.168.1.12
+python server.py
 ```
 
-- primo argomento: IP della stampante (lo trovi sul display della stampante, in Impostazioni → Rete);
+- primo argomento, facoltativo: IP della stampante, oppure `auto` (predefinito): il server cerca da solo la stampante nella rete locale (porta 9999) e la ritrova se il router le cambia IP;
 - secondo argomento, facoltativo: porta del server, predefinita `80`.
 
 Poi dal telefono apri `http://IP-DEL-PC` (per esempio `http://192.168.1.14`).
@@ -71,7 +71,7 @@ Dal menu del browser scegli **Aggiungi a schermata Home** (Android) o **Condivid
 
 ### Avvio automatico all'accensione del PC (Windows)
 
-Doppio clic su `avvio-automatico.bat`, scrivi l'IP della stampante e basta: il server parte subito e poi a ogni accensione, senza finestre aperte. Installa da solo le dipendenze.
+Doppio clic su `avvio-automatico.bat` e premi Invio (oppure scrivi l'IP della stampante, se vuoi fissarlo): il server parte subito e poi a ogni accensione, senza finestre aperte, e scrive i messaggi in `server.log`. Senza IP cerca da solo la stampante nella rete. Installa da solo le dipendenze.
 
 Per toglierlo:
 
@@ -87,7 +87,7 @@ Su Linux si può usare un servizio systemd con `ExecStart=/usr/bin/python3 /perc
 - **Anche a schermo spento:** installa l'app gratuita [ntfy](https://ntfy.sh) sul telefono, iscriviti a un argomento con un nome difficile da indovinare (es. `ender-mario-7f3k`) e avvia il server con:
 
   ```bash
-  python server.py 192.168.1.12 --ntfy ender-mario-7f3k
+  python server.py --ntfy ender-mario-7f3k
   ```
 
   Arriva una notifica quando la stampa inizia, va in pausa, finisce (con la durata), viene annullata o va in errore. Con l'avvio automatico: `avvio-automatico.bat -Ntfy ender-mario-7f3k`. Chi conosce il nome dell'argomento può leggere le notifiche, per questo conviene sceglierne uno lungo e casuale.
@@ -96,7 +96,7 @@ Su Linux si può usare un servizio systemd con `ExecStart=/usr/bin/python3 /perc
 
 - **Dal telefono non si apre ma dal PC sì:** prova la porta 80 (quella predefinita). Con porte come 8000 alcuni telefoni/browser non si collegavano.
 - **Windows chiede il permesso del firewall:** consenti a Python l'accesso alla rete privata.
-- **"stampante non raggiungibile":** l'IP della stampante è cambiato (DHCP). Riavvia il server con il nuovo IP, oppure fissa l'IP della stampante nel router.
+- **"stampante non raggiungibile":** la stampante è spenta, oppure il server è stato avviato con un IP fisso che è cambiato (DHCP). Con `auto` la ritrova da solo; altrimenti riavvialo con il nuovo IP o fissa l'IP della stampante nel router.
 - **Su Linux la porta 80 richiede permessi:** usa una porta sopra 1024, per esempio `python server.py 192.168.1.12 8080`.
 
 ## Il numero del layer

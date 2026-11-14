@@ -1,7 +1,8 @@
 # Fa partire lo schermino da solo all'accensione del PC (Windows), senza finestre aperte.
 #
-#   Attivare:  powershell -ExecutionPolicy Bypass -File avvio-automatico.ps1 -Stampante 192.168.1.12
-#   Con notifiche ntfy:  ... -Stampante 192.168.1.12 -Ntfy ender-mario-7f3k
+#   Attivare:  powershell -ExecutionPolicy Bypass -File avvio-automatico.ps1             (cerca la stampante da solo)
+#              powershell -ExecutionPolicy Bypass -File avvio-automatico.ps1 -Stampante 192.168.1.12   (IP fisso)
+#   Con notifiche ntfy:  ... -Ntfy ender-mario-7f3k
 #   Togliere:  powershell -ExecutionPolicy Bypass -File avvio-automatico.ps1 -Rimuovi
 param(
     [string]$Stampante = "",
@@ -21,8 +22,9 @@ if ($Rimuovi) {
     exit 0
 }
 
-if (-not $Stampante) { $Stampante = Read-Host "IP della stampante (Impostazioni -> Rete sul display)" }
-if ($Stampante -notmatch '^\d{1,3}(\.\d{1,3}){3}$') { throw "IP non valido: $Stampante" }
+if (-not $Stampante) { $Stampante = Read-Host "IP della stampante (Invio = la cerca da sola nella rete)" }
+if (-not $Stampante) { $Stampante = "auto" }
+if ($Stampante -ne "auto" -and $Stampante -notmatch '^\d{1,3}(\.\d{1,3}){3}$') { throw "IP non valido: $Stampante" }
 
 # pythonw = Python senza finestra nera
 $pyw = (Get-Command pythonw.exe -ErrorAction SilentlyContinue).Source
