@@ -92,6 +92,8 @@ Su Linux si può usare un servizio systemd con `ExecStart=/usr/bin/python3 /perc
 
   Arriva una notifica quando la stampa inizia, va in pausa, finisce (con la durata), viene annullata o va in errore. Con l'avvio automatico: `avvio-automatico.bat -Ntfy ender-mario-7f3k`. Chi conosce il nome dell'argomento può leggere le notifiche, per questo conviene sceglierne uno lungo e casuale.
 
+  Il titolo comincia con il nome della stampante (`--nome`, predefinito "Ender"), così lo stesso argomento può servire più stampanti, per esempio insieme a [bambu-a1mini-status](https://github.com/stricchi79-source/bambu-a1mini-status). Se lo smartwatch ripete le notifiche del telefono, arrivano anche lì.
+
 ## Problemi comuni
 
 - **Dal telefono non si apre ma dal PC sì:** prova la porta 80 (quella predefinita). Con porte come 8000 alcuni telefoni/browser non si collegavano.

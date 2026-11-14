@@ -32,6 +32,8 @@ ap.add_argument("--ntfy", default=os.environ.get("ENDER_NTFY", ""),
                 help="argomento ntfy per le notifiche (es. ender-mario-7f3k), vuoto = spente")
 ap.add_argument("--ntfy-server", default=os.environ.get("ENDER_NTFY_SERVER", "https://ntfy.sh"),
                 help="server ntfy (default https://ntfy.sh)")
+ap.add_argument("--nome", default=os.environ.get("ENDER_NOME", "Ender"),
+                help="nome della stampante nel titolo delle notifiche (utile se piu' stampanti usano lo stesso argomento)")
 args = ap.parse_args()
 
 AUTO = args.printer == "auto"
@@ -52,7 +54,7 @@ NOMI_STATO = {1: "in stampa", 2: "finita", 3: "errore", 4: "annullata", 5: "in p
 def notifica(titolo: str, testo: str, tag: str, priorita: int = 4) -> None:
     if not args.ntfy:
         return
-    corpo = json.dumps({"topic": args.ntfy, "title": titolo, "message": testo,
+    corpo = json.dumps({"topic": args.ntfy, "title": f"{args.nome}: {titolo}" if args.nome else titolo, "message": testo,
                         "tags": [tag], "priority": priorita}).encode()
 
     def invia():
